@@ -3,10 +3,11 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "EditorCategoryUtils.h"
 #include "GameplayTagContainer.h"
+#include "StructUtils/InstancedStruct.h"
 #include "Inv_ItemFragments.generated.h"
 
+struct FInv_ConsumeModifier;
 class UInv_CompositeBase;
 class APlayerController;
 USTRUCT()
@@ -50,6 +51,7 @@ struct FInv_LabeledNumberFragment: public FInv_InventoryItemFragment
 	// When manifesting for the first time, this fragment will randomize. However, onee equipped
 	// and dropped, an item should retain the same value, so randomization should not occur.
 	bool bRandomizeOnManifest{true};
+	float GetValue() const { return Value; }
 	
 private:
 
@@ -148,31 +150,38 @@ private:
 };
 
 USTRUCT(BlueprintType)
-struct FInv_ConsumableFragment: public FInv_ItemFragment
+struct FInv_ConsumableFragment: public FInv_InventoryItemFragment
 {
 	GENERATED_BODY()
 
-	virtual void OnConsume(APlayerController* PC){};
+	virtual void OnConsume(APlayerController* PC);
+	virtual void Assimilate(UInv_CompositeBase* Composite) const override;
+	virtual void Manifest() override;
+
+private:
+	UPROPERTY(EditAnywhere, Category = "Inventory", meta = (ExcludeBaseStruct))
+	TArray<TInstancedStruct<FInv_ConsumeModifier>> ConsumeModifiers;
 };
 
 USTRUCT(BlueprintType)
-struct FInv_HealthPotionFragment: public FInv_ConsumableFragment
+struct FInv_ConsumeModifier: public FInv_LabeledNumberFragment
 {
 	GENERATED_BODY()
+	virtual void OnConsume(APlayerController* PC){}
+};
 
-	UPROPERTY(EditAnywhere, Category = "Inventory")
-	float HealthRecovery = 0.f;
+USTRUCT(BlueprintType)
+struct FInv_HealthPotionFragment: public FInv_ConsumeModifier
+{
+	GENERATED_BODY()
 
 	virtual void OnConsume(APlayerController* PC) override;
 };
 
 USTRUCT(BlueprintType)
-struct FInv_ManaPotionFragment: public FInv_ConsumableFragment
+struct FInv_ManaPotionFragment: public FInv_ConsumeModifier
 {
 	GENERATED_BODY()
-
-	UPROPERTY(EditAnywhere, Category = "Inventory")
-	float ManaRecovery = 0.f;
 
 	virtual void OnConsume(APlayerController* PC) override;
 };
