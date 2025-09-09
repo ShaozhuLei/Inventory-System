@@ -7,6 +7,7 @@
 #include "StructUtils/InstancedStruct.h"
 #include "Inv_ItemFragments.generated.h"
 
+struct FInv_EquipModifier;
 struct FInv_ConsumeModifier;
 class UInv_CompositeBase;
 class APlayerController;
@@ -185,4 +186,44 @@ struct FInv_ManaPotionFragment: public FInv_ConsumeModifier
 
 	virtual void OnConsume(APlayerController* PC) override;
 };
+
+/*
+ * 基于可装备武器的Fragment
+ */
+
+USTRUCT(BlueprintType)
+struct FInv_EquipmentFragment: public FInv_InventoryItemFragment
+{
+	GENERATED_BODY()
+
+	bool bEquipped{false};
+	virtual void Equip(APlayerController* PC);
+	virtual void UnEquip(APlayerController* PC);
+	virtual void Assimilate(UInv_CompositeBase* Composite) const override;
+
+private:
+	UPROPERTY(EditAnywhere, Category = "Inventory")
+	TArray<TInstancedStruct<FInv_EquipModifier>> EquipModifiers;
+};
+
+USTRUCT(BlueprintType)
+struct FInv_EquipModifier: public FInv_LabeledNumberFragment
+{
+	GENERATED_BODY()
+
+	virtual void Equip(APlayerController* PC){};
+	virtual void UnEquip(APlayerController* PC){};
+};
+
+USTRUCT(BlueprintType)
+struct FInv_StrengthModifier: public  FInv_EquipModifier
+{
+	GENERATED_BODY()
+	virtual void Equip(APlayerController* PC) override;
+	virtual void UnEquip(APlayerController* PC) override;
+};
+
+/*
+ * 以上为可装备道具的Fragment.
+ */
 

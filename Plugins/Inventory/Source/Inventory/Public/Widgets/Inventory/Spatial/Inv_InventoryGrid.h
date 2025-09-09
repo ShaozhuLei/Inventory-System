@@ -42,6 +42,8 @@ public:
 	UFUNCTION()
 	void AddItem(UInv_InventoryItem* Item);
 
+	FORCEINLINE UInv_HoverItem* GetHoveredItem() const {return HoverItem;};
+
 
 private:
 	void ConstructGrid();

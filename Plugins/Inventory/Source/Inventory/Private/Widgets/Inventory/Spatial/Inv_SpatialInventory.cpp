@@ -13,8 +13,10 @@
 #include "InventoryManagement/Inv_InventoryStatics.h"
 #include "Items/Components/Inv_ItemComponent.h"
 #include "Widgets/Inventory/GridSlots/Inv_EquippedGridSlot.h"
+#include "Widgets/Inventory/HoverItem/Inv_HoverItem.h"
 #include "Widgets/Inventory/Spatial/Inv_InventoryGrid.h"
 #include "Widgets/ItemDescription/Inv_ItemDescription.h"
+#include "Types/Inv_GridTypes.h"
 
 
 void UInv_SpatialInventory::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
@@ -88,7 +90,7 @@ void UInv_SpatialInventory::OnCraftablePressed()
 
 void UInv_SpatialInventory::EquippedGridSlotClicked(UInv_EquippedGridSlot* EquippedGridSlot, const FGameplayTag& EquipmentTypeTag)
 {
-	
+	if (!CanEquipHoverItem(EquippedGridSlot, EquipmentTypeTag)) return;
 }
 
 void UInv_SpatialInventory::SetActiveGrid(UInv_InventoryGrid* Grid, UButton* Button)
@@ -122,6 +124,24 @@ void UInv_SpatialInventory::SetItemDescriptionSizeAndPosition(UInv_ItemDescripti
 		UWidgetLayoutLibrary::GetMousePositionOnViewport(GetOwningPlayer())
 	);
 	ItemDescriptionCPS->SetPosition(ClampedMousePosition);
+}
+
+bool UInv_SpatialInventory::CanEquipHoverItem(UInv_EquippedGridSlot* EquippedGridSlot,
+	const FGameplayTag& EquipmentTypeTag) const
+{
+	if (!IsValid(EquippedGridSlot) || EquippedGridSlot->GetInventoryItem().IsValid()) return false;
+
+	UInv_HoverItem* HoveredItem = GetHoveredItem();
+	if (!IsValid(HoveredItem)) return false;
+
+	UInv_InventoryItem* HeldItem = HoveredItem->GetInventoryItem();
+	//判断是否存, Tag, Item种类是否是Equippable
+	return IsValid(HeldItem)
+	|| HasHoverItem()
+	|| !HeldItem->IsStackable()
+	|| HeldItem->GetItemManifest().GetItemCategory() == EInv_ItemCategory::Equippable
+	|| HeldItem->GetItemManifest().GetItemType().MatchesTag(EquipmentTypeTag);
+	
 }
 
 UInv_ItemDescription* UInv_SpatialInventory::GetItemDescription()
@@ -166,3 +186,10 @@ bool UInv_SpatialInventory::HasHoverItem() const
 	if (Grid_Craftables->HasHoveredItem()) return true;
 	return false;
 }
+
+UInv_HoverItem* UInv_SpatialInventory::GetHoveredItem() const
+{
+	if (!ActiveGrid.IsValid()) return nullptr;
+	return ActiveGrid->GetHoveredItem();
+}
+
