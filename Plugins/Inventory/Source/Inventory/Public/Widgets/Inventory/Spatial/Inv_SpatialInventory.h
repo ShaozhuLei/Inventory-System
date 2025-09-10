@@ -33,6 +33,7 @@ public:
 	virtual void OnItemUnHovered() override;
 	virtual bool HasHoverItem() const override;
 	virtual UInv_HoverItem* GetHoveredItem() const override;
+	virtual float GetTileSize() const override;
 private:
 
 	UPROPERTY()
@@ -60,6 +61,9 @@ private:
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UButton> Button_Craftables;
 
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<UCanvasPanel> CanvasPanel;
+
 	UFUNCTION()
 	void OnEquippablePressed();
 
@@ -72,6 +76,9 @@ private:
 	UFUNCTION()
 	void EquippedGridSlotClicked(UInv_EquippedGridSlot* EquippedGridSlot, const FGameplayTag& EquipmentTypeTag);
 
+	UFUNCTION()
+	void EquippedSlottedItemClicked(UInv_EquippedSlottedItem* SlottedItem);
+	
 	void SetActiveGrid(UInv_InventoryGrid* Grid, UButton* Button);
 	void DisableButtons(UButton* Button);
 	void SetItemDescriptionSizeAndPosition(UInv_ItemDescription* Description, UCanvasPanel* Canvas) const;
@@ -79,9 +86,6 @@ private:
 	UInv_ItemDescription* GetItemDescription();
 
 	TWeakObjectPtr<UInv_InventoryGrid> ActiveGrid;
-	
-	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UCanvasPanel> CanvasPanel;
 
 	UPROPERTY(EditAnywhere, Category="Inventory")
 	TSubclassOf<UInv_ItemDescription> ItemDescriptionClass;

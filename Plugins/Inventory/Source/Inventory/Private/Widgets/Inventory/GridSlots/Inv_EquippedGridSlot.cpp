@@ -3,8 +3,13 @@
 
 #include "Widgets/Inventory/GridSlots/Inv_EquippedGridSlot.h"
 
+#include "Blueprint/WidgetLayoutLibrary.h"
+#include "Components/Overlay.h"
+#include "Components/OverlaySlot.h"
 #include "InventoryManagement/Inv_InventoryStatics.h"
+#include "Items/Inv_InventoryItem.h"
 #include "Widgets/Inventory/HoverItem/Inv_HoverItem.h"
+#include "Widgets/Inventory/SlottedItems/Inv_EquippedSlottedItem.h"
 
 void UInv_EquippedGridSlot::NativeOnMouseEnter(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
 {
@@ -13,12 +18,6 @@ void UInv_EquippedGridSlot::NativeOnMouseEnter(const FGeometry& InGeometry, cons
 
 	UInv_HoverItem* HoverItem = UInv_InventoryStatics::GetHoveredItem(GetOwningPlayer());
 	if (!HoverItem) return;
-
-	// if (HoverItem->GetItemType().MatchesTagExact(EquipmentTypeTag))
-	// {
-	// 	SetOccupiedTexture();
-	// 	Image_GrayedOutIcon->SetVisibility(ESlateVisibility::Visible);
-	// }
 
 	if (HoverItem->GetItemType().MatchesTag(EquipmentTypeTag))
 	{
@@ -52,5 +51,55 @@ FReply UInv_EquippedGridSlot::NativeOnMouseButtonDown(const FGeometry& InGeometr
 UInv_EquippedSlottedItem* UInv_EquippedGridSlot::OnItemEquipped(UInv_InventoryItem* Item,
 	const FGameplayTag& EquipmentTag, float TileSize)
 {
-	return nullptr;
+	//判断HoverItem的Tag 和本框的Tag是否一致
+	if (!EquipmentTag.MatchesTagExact(EquipmentTypeTag)) return nullptr;
+
+	//计算即将在Slot中图标的draw size
+	const FInv_GridFragment* GridFragment = GetFragment<FInv_GridFragment>(Item, EquipmentTag);
+	
+	FIntPoint GridDimensions  = GridFragment->GetGridSize();
+	const float IconTileWidth  = TileSize - (2 * GridFragment->GetGridPadding());
+	
+	FVector2D DrawSize = GridDimensions * IconTileWidth;
+
+	//生成EquippedSlottedItem
+	EquippedSlottedItem = CreateWidget<UInv_EquippedSlottedItem>(GetOwningPlayer(), EquippedGridSlotClass);
+
+	// Set the Slotted Item's Inventory Item
+	EquippedSlottedItem->SetInventoryItem(Item);
+	
+	// Set the Slotted Item's Equipment Type Tag
+	EquippedSlottedItem->SetEquipmentTypeTag(EquipmentTag);
+	
+	// Hide the Stack Count widget on the Slotted Item
+	EquippedSlottedItem->UpdateStackAmount(0);
+	
+	// Set Inventory Item on this class (the Equipped Grid Slot)
+	SetInventoryItem(Item);
+	
+	// Set the Image Brush on the Equipped Slotted Item
+	const FInv_ImageFragment* ImageFragment = Item->GetItemManifest().GetFragmentOfType<FInv_ImageFragment>();
+	if (!ImageFragment) return nullptr;
+
+	FSlateBrush SlateBrush;
+	SlateBrush.SetResourceObject(ImageFragment->GetIcon());
+	SlateBrush.DrawAs = ESlateBrushDrawType::Image;
+	SlateBrush.ImageSize = DrawSize;
+	EquippedSlottedItem->SetImageBrush(SlateBrush);
+	
+	// Add the Slotted Item as a child to this widget's Overlay
+	OverlayRoot->AddChild(EquippedSlottedItem);
+	FGeometry OverlayGeometry = OverlayRoot->GetCachedGeometry();
+	
+	FVector2D OverlayPosition = OverlayGeometry.GetAbsolutePosition();
+	FVector2D OverlaySize = OverlayGeometry.GetAbsoluteSize();
+
+	const float LeftPadding = OverlaySize.X/2 - DrawSize.X/2;
+	const float TopPadding = OverlaySize.Y/2 - DrawSize.Y/2;
+
+	UOverlaySlot* OverlaySlot = UWidgetLayoutLibrary::SlotAsOverlaySlot(EquippedSlottedItem);
+	OverlaySlot->SetPadding(FMargin(LeftPadding, TopPadding));
+	
+	// Return the Equipped Slotted Item widget
+	return EquippedSlottedItem;
 }

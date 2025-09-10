@@ -17,6 +17,7 @@
 #include "Widgets/Inventory/Spatial/Inv_InventoryGrid.h"
 #include "Widgets/ItemDescription/Inv_ItemDescription.h"
 #include "Types/Inv_GridTypes.h"
+#include "Widgets/Inventory/SlottedItems/Inv_EquippedSlottedItem.h"
 
 
 void UInv_SpatialInventory::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
@@ -91,6 +92,30 @@ void UInv_SpatialInventory::OnCraftablePressed()
 void UInv_SpatialInventory::EquippedGridSlotClicked(UInv_EquippedGridSlot* EquippedGridSlot, const FGameplayTag& EquipmentTypeTag)
 {
 	if (!CanEquipHoverItem(EquippedGridSlot, EquipmentTypeTag)) return;
+	UInv_HoverItem* HoverItem = GetHoveredItem();
+	
+	// Create an Equipped Slotted Item and add it to the Equipped Grid Slot (call EquippedGridSlot->OnItemEquipped())
+	const float TileSize = UInv_InventoryStatics::GetInventoryWidget(GetOwningPlayer())->GetTileSize();
+	//将EquippedGridSlot 与 HoveredItem进行整合，成为EquippedSlottedItem
+	UInv_EquippedSlottedItem* EquippedSlottedItem = EquippedGridSlot->OnItemEquipped(HoverItem->GetInventoryItem(), EquipmentTypeTag, TileSize);
+	EquippedSlottedItem->OnEquippedSlottedItemClicked.AddDynamic(this, &ThisClass::EquippedSlottedItemClicked);
+
+	//Clear Hovered Item
+	Grid_Equippables->ClearHoverItem();
+	
+	// Inform the server that we've equipped an item (potentially unequipping an item as well)
+	UInv_InventoryComponent* InventoryComponent = UInv_InventoryStatics::GetInventoryComponent(GetOwningPlayer());
+	InventoryComponent->Server_EquipSlotClicked(HoverItem->GetInventoryItem(), nullptr);
+
+	if (GetOwningPlayer()->GetNetMode() != NM_DedicatedServer)
+	{
+		InventoryComponent->OnItemEquipped.Broadcast(HoverItem->GetInventoryItem());
+	}
+	
+}
+
+void UInv_SpatialInventory::EquippedSlottedItemClicked(UInv_EquippedSlottedItem* SlottedItem)
+{
 }
 
 void UInv_SpatialInventory::SetActiveGrid(UInv_InventoryGrid* Grid, UButton* Button)
@@ -191,5 +216,10 @@ UInv_HoverItem* UInv_SpatialInventory::GetHoveredItem() const
 {
 	if (!ActiveGrid.IsValid()) return nullptr;
 	return ActiveGrid->GetHoveredItem();
+}
+
+float UInv_SpatialInventory::GetTileSize() const
+{
+	return Grid_Equippables->GetTileSize();
 }
 

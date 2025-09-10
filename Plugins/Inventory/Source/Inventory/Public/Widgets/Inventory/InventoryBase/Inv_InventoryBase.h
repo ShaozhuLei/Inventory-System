@@ -23,4 +23,5 @@ public:
 	virtual void OnItemUnHovered() {}
 	virtual bool HasHoverItem() const { return false; }
 	virtual UInv_HoverItem* GetHoveredItem() const {return nullptr;};
+	virtual float GetTileSize() const { return 0.0f; };
 };

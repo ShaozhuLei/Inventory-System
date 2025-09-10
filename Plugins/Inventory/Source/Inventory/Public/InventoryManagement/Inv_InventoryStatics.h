@@ -37,6 +37,9 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Inventory")
 	static UInv_HoverItem* GetHoveredItem(APlayerController* PC);
+
+	UFUNCTION(BlueprintCallable, Category = "Inventory")
+	static UInv_InventoryBase* GetInventoryWidget(APlayerController* PC);
 };
 
 template <typename T, typename FuncT>

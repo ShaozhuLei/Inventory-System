@@ -38,6 +38,8 @@ public:
 	void DropItem();
 	void SetOwningCanvas(UCanvasPanel* OwningCanvas);
 	bool HasHoveredItem();
+	void ClearHoverItem();
+	FORCEINLINE	float GetTileSize() const{return TileSize;};
 
 	UFUNCTION()
 	void AddItem(UInv_InventoryItem* Item);
@@ -89,7 +91,6 @@ private:
 	void ChangeHoverType(const int32 Index, const FIntPoint& Dimensions, EInv_GridSlotState GridSlotState);
 	void RemoveItemFromGrid(UInv_InventoryItem* InventoryItem, const int32 GridIndex);
 	void PutDownOnIndex(const int32 Index);
-	void ClearHoverItem();
 	UUserWidget* GetVisibleCursorWidget();
 	UUserWidget* GetHiddenCursorWidget();
 	bool IsSameStackable(const UInv_InventoryItem* ClickedInventoryItem) const;
