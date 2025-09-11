@@ -3,9 +3,11 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Items/Inv_InventoryItem.h"
 #include "Widgets/Inventory/InventoryBase/Inv_InventoryBase.h"
 #include "Inv_SpatialInventory.generated.h"
 
+class UInv_EquippedSlottedItem;
 struct FGameplayTag;
 class UInv_EquippedGridSlot;
 class UInv_ItemDescription;
@@ -77,13 +79,18 @@ private:
 	void EquippedGridSlotClicked(UInv_EquippedGridSlot* EquippedGridSlot, const FGameplayTag& EquipmentTypeTag);
 
 	UFUNCTION()
-	void EquippedSlottedItemClicked(UInv_EquippedSlottedItem* SlottedItem);
+	void EquippedSlottedItemClicked(UInv_EquippedSlottedItem* EquippedSlottedItem);
 	
 	void SetActiveGrid(UInv_InventoryGrid* Grid, UButton* Button);
 	void DisableButtons(UButton* Button);
 	void SetItemDescriptionSizeAndPosition(UInv_ItemDescription* Description, UCanvasPanel* Canvas) const;
 	bool CanEquipHoverItem(UInv_EquippedGridSlot* EquippedGridSlot, const FGameplayTag& EquipmentTypeTag) const;
+	UInv_EquippedGridSlot* FindSlotWithEquippedItem(UInv_InventoryItem* EquippedItem) const;
 	UInv_ItemDescription* GetItemDescription();
+	void ClearSlotOfItem(UInv_EquippedGridSlot* EquippedGridSlot);
+	void RemoveEquippedSlottedItem(UInv_EquippedSlottedItem* EquippedSlottedItem);
+	void MakeEquippedSlottedItem(UInv_EquippedSlottedItem* EquippedSlottedItem, UInv_EquippedGridSlot* EquippedGridSlot,
+		UInv_InventoryItem* ItemToEquip);
 
 	TWeakObjectPtr<UInv_InventoryGrid> ActiveGrid;
 

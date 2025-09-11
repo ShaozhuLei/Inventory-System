@@ -8,6 +8,7 @@
 #include "Components/OverlaySlot.h"
 #include "InventoryManagement/Inv_InventoryStatics.h"
 #include "Items/Inv_InventoryItem.h"
+#include "Items/Fragments/Inv_FragmentTags.h"
 #include "Widgets/Inventory/HoverItem/Inv_HoverItem.h"
 #include "Widgets/Inventory/SlottedItems/Inv_EquippedSlottedItem.h"
 
@@ -55,12 +56,12 @@ UInv_EquippedSlottedItem* UInv_EquippedGridSlot::OnItemEquipped(UInv_InventoryIt
 	if (!EquipmentTag.MatchesTagExact(EquipmentTypeTag)) return nullptr;
 
 	//计算即将在Slot中图标的draw size
-	const FInv_GridFragment* GridFragment = GetFragment<FInv_GridFragment>(Item, EquipmentTag);
+	const FInv_GridFragment* GridFragment = GetFragment<FInv_GridFragment>(Item, FragmentTags::GridFragment);
+	if (!GridFragment) return nullptr;
+	const FIntPoint GridDimensions  = GridFragment->GetGridSize();
 	
-	FIntPoint GridDimensions  = GridFragment->GetGridSize();
 	const float IconTileWidth  = TileSize - (2 * GridFragment->GetGridPadding());
-	
-	FVector2D DrawSize = GridDimensions * IconTileWidth;
+	const FVector2D DrawSize = GridDimensions * IconTileWidth;
 
 	//生成EquippedSlottedItem
 	EquippedSlottedItem = CreateWidget<UInv_EquippedSlottedItem>(GetOwningPlayer(), EquippedGridSlotClass);
@@ -78,7 +79,7 @@ UInv_EquippedSlottedItem* UInv_EquippedGridSlot::OnItemEquipped(UInv_InventoryIt
 	SetInventoryItem(Item);
 	
 	// Set the Image Brush on the Equipped Slotted Item
-	const FInv_ImageFragment* ImageFragment = Item->GetItemManifest().GetFragmentOfType<FInv_ImageFragment>();
+	const FInv_ImageFragment* ImageFragment = GetFragment<FInv_ImageFragment>(Item, FragmentTags::IconFragment);
 	if (!ImageFragment) return nullptr;
 
 	FSlateBrush SlateBrush;
@@ -91,15 +92,24 @@ UInv_EquippedSlottedItem* UInv_EquippedGridSlot::OnItemEquipped(UInv_InventoryIt
 	OverlayRoot->AddChild(EquippedSlottedItem);
 	FGeometry OverlayGeometry = OverlayRoot->GetCachedGeometry();
 	
-	FVector2D OverlayPosition = OverlayGeometry.GetAbsolutePosition();
+	FVector2D OverlayPos = OverlayGeometry.GetAbsolutePosition();
 	FVector2D OverlaySize = OverlayGeometry.GetAbsoluteSize();
 
-	const float LeftPadding = OverlaySize.X/2 - DrawSize.X/2;
-	const float TopPadding = OverlaySize.Y/2 - DrawSize.Y/2;
+	const float LeftPadding = OverlaySize.X/2.f - DrawSize.X/2.f;
+	const float TopPadding = OverlaySize.Y/2.f - DrawSize.Y/2.f;
 
 	UOverlaySlot* OverlaySlot = UWidgetLayoutLibrary::SlotAsOverlaySlot(EquippedSlottedItem);
 	OverlaySlot->SetPadding(FMargin(LeftPadding, TopPadding));
+
+	HideImageGrayedOutIcon(true);
 	
 	// Return the Equipped Slotted Item widget
 	return EquippedSlottedItem;
+}
+
+void UInv_EquippedGridSlot::HideImageGrayedOutIcon(bool bHide)
+{
+	if (bHide) Image_GrayedOutIcon->SetVisibility(ESlateVisibility::Collapsed);
+	else Image_GrayedOutIcon->SetVisibility(ESlateVisibility::Visible);
+	
 }

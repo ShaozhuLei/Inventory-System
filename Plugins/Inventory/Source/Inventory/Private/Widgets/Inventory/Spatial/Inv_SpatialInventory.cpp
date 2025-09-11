@@ -11,7 +11,6 @@
 #include "Components/CanvasPanelSlot.h"
 #include "Components/WidgetSwitcher.h"
 #include "InventoryManagement/Inv_InventoryStatics.h"
-#include "Items/Components/Inv_ItemComponent.h"
 #include "Widgets/Inventory/GridSlots/Inv_EquippedGridSlot.h"
 #include "Widgets/Inventory/HoverItem/Inv_HoverItem.h"
 #include "Widgets/Inventory/Spatial/Inv_InventoryGrid.h"
@@ -114,9 +113,31 @@ void UInv_SpatialInventory::EquippedGridSlotClicked(UInv_EquippedGridSlot* Equip
 	
 }
 
-void UInv_SpatialInventory::EquippedSlottedItemClicked(UInv_EquippedSlottedItem* SlottedItem)
+void UInv_SpatialInventory::EquippedSlottedItemClicked(UInv_EquippedSlottedItem* EquippedSlottedItem)
 {
+	// Remove the Item Description
+	UInv_InventoryStatics::ItemUnhovered(GetOwningPlayer());
+	if (IsValid(GetHoveredItem()) && GetHoveredItem()->IsStackable()) return;
+	// Get Item to Equip
+	UInv_InventoryItem* ItemToEquip = GetHoveredItem()->GetInventoryItem();
+	// Get Item to Unequip
+	UInv_InventoryItem* ItemToUnequip = EquippedSlottedItem->GetInventoryItem();
+	// Get the Equipped Grid Slot holding this item
+	UInv_EquippedGridSlot* EquippedGridSlot = FindSlotWithEquippedItem(EquippedSlottedItem->GetInventoryItem());
+	// Clear the equipped grid slot of this item (set it's inventory item to nullptr)
+	ClearSlotOfItem(EquippedGridSlot);
+	// Assign previously equipped item as the hover item
+	Grid_Equippables->AssignHoverItem(EquippedSlottedItem->GetInventoryItem());
+	// Remove of the equipped slotted item from the equipped grid slot
+	// (unbind from the OnEquippedSlottedItemClicked )
+	// Removing the Equipped Slotted Item from Parent
+	RemoveEquippedSlottedItem(EquippedSlottedItem);
+	
+	// Make a new equipped slotted item (for the item we held in HoverItem)
+	MakeEquippedSlottedItem(EquippedSlottedItem, EquippedGridSlot, ItemToEquip);
+	// Broadcast delegates for OnItemEquipped/OnItemUnequipped (from the IC)
 }
+
 
 void UInv_SpatialInventory::SetActiveGrid(UInv_InventoryGrid* Grid, UButton* Button)
 {
@@ -169,6 +190,15 @@ bool UInv_SpatialInventory::CanEquipHoverItem(UInv_EquippedGridSlot* EquippedGri
 	
 }
 
+UInv_EquippedGridSlot* UInv_SpatialInventory::FindSlotWithEquippedItem(UInv_InventoryItem* EquippedItem) const
+{
+	auto* FoundEquippedGridSlot = EquippedGridSlots.FindByPredicate([EquippedItem](const UInv_EquippedGridSlot* GridSlot)
+	{
+		return GridSlot->GetInventoryItem() == EquippedItem;
+	});
+	return FoundEquippedGridSlot? FoundEquippedGridSlot->Get() : nullptr;
+}
+
 UInv_ItemDescription* UInv_SpatialInventory::GetItemDescription()
 {
 	if (!IsValid(ItemDescription))
@@ -178,6 +208,39 @@ UInv_ItemDescription* UInv_SpatialInventory::GetItemDescription()
 	}
 	
 	return ItemDescription;
+}
+
+void UInv_SpatialInventory::ClearSlotOfItem(UInv_EquippedGridSlot* EquippedGridSlot)
+{
+	if (IsValid(EquippedGridSlot))
+	{
+		EquippedGridSlot->SetInventoryItem(nullptr);
+		EquippedGridSlot->SetEquippedSlottedItem(nullptr);
+	}
+}
+
+void UInv_SpatialInventory::RemoveEquippedSlottedItem(UInv_EquippedSlottedItem* EquippedSlottedItem)
+{
+	if (!IsValid(EquippedSlottedItem)) return;
+
+	if (EquippedSlottedItem->OnEquippedSlottedItemClicked.IsAlreadyBound(this, &ThisClass::EquippedSlottedItemClicked))
+	{
+		EquippedSlottedItem->OnEquippedSlottedItemClicked.RemoveDynamic(this, &ThisClass::EquippedSlottedItemClicked);
+	}
+	EquippedSlottedItem->RemoveFromParent();
+	
+}
+
+void UInv_SpatialInventory::MakeEquippedSlottedItem(UInv_EquippedSlottedItem* EquippedSlottedItem,
+	UInv_EquippedGridSlot* EquippedGridSlot, UInv_InventoryItem* ItemToEquip)
+{
+	if (!IsValid(EquippedGridSlot)) return;
+	UInv_EquippedSlottedItem* SlottedItem = EquippedGridSlot->OnItemEquipped(ItemToEquip,
+		EquippedGridSlot->GetEquipmentTypeTag(),
+		UInv_InventoryStatics::GetInventoryWidget(GetOwningPlayer())->GetTileSize());
+
+	SlottedItem->OnEquippedSlottedItemClicked.AddDynamic(this, &ThisClass::UInv_SpatialInventory::EquippedSlottedItemClicked);
+	EquippedGridSlot->SetEquippedSlottedItem(SlottedItem);
 }
 
 void UInv_SpatialInventory::OnItemHovered(UInv_InventoryItem* Item)

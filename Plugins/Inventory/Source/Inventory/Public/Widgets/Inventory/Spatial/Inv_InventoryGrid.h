@@ -39,6 +39,7 @@ public:
 	void SetOwningCanvas(UCanvasPanel* OwningCanvas);
 	bool HasHoveredItem();
 	void ClearHoverItem();
+	void AssignHoverItem(UInv_InventoryItem* InventoryItem);
 	FORCEINLINE	float GetTileSize() const{return TileSize;};
 
 	UFUNCTION()
@@ -87,7 +88,6 @@ private:
 	void HighlightSlots(const int32 Index, const FIntPoint& Dimensions);
 	void UnHighlightSlots(const int32 Index, const FIntPoint& Dimensions);
 	void AssignHoverItem(UInv_InventoryItem* InventoryItem, int32 GridIndex, int32 PreviousGridIndex);
-	void AssignHoverItem(UInv_InventoryItem* InventoryItem);
 	void ChangeHoverType(const int32 Index, const FIntPoint& Dimensions, EInv_GridSlotState GridSlotState);
 	void RemoveItemFromGrid(UInv_InventoryItem* InventoryItem, const int32 GridIndex);
 	void PutDownOnIndex(const int32 Index);
