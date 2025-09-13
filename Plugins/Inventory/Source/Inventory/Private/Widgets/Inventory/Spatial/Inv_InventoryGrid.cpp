@@ -29,7 +29,7 @@ void UInv_InventoryGrid::NativeOnInitialized()
 	InventoryComponent = UInv_InventoryStatics::GetInventoryComponent(GetOwningPlayer());
 	InventoryComponent->OnItemAdded.AddDynamic(this, &UInv_InventoryGrid::AddItem);
 	InventoryComponent->OnStackChange.AddDynamic(this, &UInv_InventoryGrid::AddStacks);
-	//xxxxxxxxxxxxxxxxxxxxx
+	//push 到分支
 	
 }
 
