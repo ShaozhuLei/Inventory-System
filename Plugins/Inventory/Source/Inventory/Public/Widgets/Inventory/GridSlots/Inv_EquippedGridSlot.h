@@ -43,6 +43,5 @@ private:
 
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UOverlay> OverlayRoot;
-
-	void HideImageGrayedOutIcon(bool bHide);
+	
 };

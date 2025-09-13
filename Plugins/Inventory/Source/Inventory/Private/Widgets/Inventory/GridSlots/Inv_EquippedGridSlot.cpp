@@ -35,10 +35,10 @@ void UInv_EquippedGridSlot::NativeOnMouseLeave(const FPointerEvent& InMouseEvent
 	UInv_HoverItem* HoverItem = UInv_InventoryStatics::GetHoveredItem(GetOwningPlayer());
 	if (!HoverItem) return;
 
-	if (HoverItem->GetItemType().MatchesTagExact(EquipmentTypeTag))
+	if (HoverItem->GetItemType().MatchesTag(EquipmentTypeTag))
 	{
 		SetUnoccupiedTexture();
-		Image_GrayedOutIcon->SetVisibility(ESlateVisibility::Collapsed);
+		//Image_GrayedOutIcon->SetVisibility(ESlateVisibility::Collapsed);
 	}
 	
 }
@@ -100,16 +100,8 @@ UInv_EquippedSlottedItem* UInv_EquippedGridSlot::OnItemEquipped(UInv_InventoryIt
 
 	UOverlaySlot* OverlaySlot = UWidgetLayoutLibrary::SlotAsOverlaySlot(EquippedSlottedItem);
 	OverlaySlot->SetPadding(FMargin(LeftPadding, TopPadding));
-
-	HideImageGrayedOutIcon(true);
 	
 	// Return the Equipped Slotted Item widget
 	return EquippedSlottedItem;
 }
 
-void UInv_EquippedGridSlot::HideImageGrayedOutIcon(bool bHide)
-{
-	if (bHide) Image_GrayedOutIcon->SetVisibility(ESlateVisibility::Collapsed);
-	else Image_GrayedOutIcon->SetVisibility(ESlateVisibility::Visible);
-	
-}

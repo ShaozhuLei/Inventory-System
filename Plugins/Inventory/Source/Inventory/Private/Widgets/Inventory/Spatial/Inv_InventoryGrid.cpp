@@ -29,6 +29,7 @@ void UInv_InventoryGrid::NativeOnInitialized()
 	InventoryComponent = UInv_InventoryStatics::GetInventoryComponent(GetOwningPlayer());
 	InventoryComponent->OnItemAdded.AddDynamic(this, &UInv_InventoryGrid::AddItem);
 	InventoryComponent->OnStackChange.AddDynamic(this, &UInv_InventoryGrid::AddStacks);
+	//xxxxxxxxxxxxxxxxxxxxx
 	
 }
 
@@ -125,10 +126,6 @@ void UInv_InventoryGrid::OnTileParametersUpdated(const FInv_TileParameters& Para
 	const FIntPoint StartingCoordiate = CalculateStartingCoordinate(Parameters.TileCoordinats, Dimensions, Parameters.TileQuadrant);
 	
 	ItemDropIndex = UInv_WidgetUtils::GetIndexFromPosition(StartingCoordiate, GridColumns);
-	GEngine->AddOnScreenDebugMessage(1,
-		3.f,
-		FColor::Cyan,
-		FString::Printf(TEXT("ItemDropIndex: %d"),ItemDropIndex));
 	// ItemDropIndex格子信息结构体
 	CurrentQueryResult = CheckHoverPosition(StartingCoordiate, Dimensions);
 
@@ -397,8 +394,7 @@ void UInv_InventoryGrid::OnSlottedItemClicked(int32 GridIndex, const FPointerEve
 		
 	}
 	//已持有的话，且种类不同则与Hover Item做交换
-	SwapWithHoverItem(ClickedInventoryItem, GridIndex);
-	
+	if (CurrentQueryResult.ValidItem.IsValid())SwapWithHoverItem(ClickedInventoryItem, GridIndex);
 	
 }
 
@@ -503,6 +499,7 @@ UUserWidget* UInv_InventoryGrid::GetHiddenCursorWidget()
 //检查Hover Item和 点击物品是否是同一个可累计物品
 bool UInv_InventoryGrid::IsSameStackable(const UInv_InventoryItem* ClickedInventoryItem) const
 {
+	if (!IsValid(ClickedInventoryItem)) return false;
 	const bool bIsSameItem = ClickedInventoryItem == HoverItem->GetInventoryItem();
 	const bool bIsStackable = ClickedInventoryItem->IsStackable();
 	return bIsSameItem && bIsStackable && HoverItem->GetItemType().MatchesTagExact(ClickedInventoryItem->GetItemManifest().GetItemType());
@@ -665,23 +662,36 @@ void UInv_InventoryGrid::OnGridSlotUnhovered(int32 GridIndex, const FPointerEven
 	}
 }
 
+void UInv_InventoryGrid::OnHide()
+{
+	PutHoverItemBack();
+}
 
+void UInv_InventoryGrid::PutHoverItemBack()
+{
+	if (!IsValid(GetHoveredItem())) return;
+	
+	FInv_SlotAvailabilityResult Result = HasRoomForItem(GetHoveredItem()->GetInventoryItem(), GetHoveredItem()->GetStackCount());
+	Result.Item = GetHoveredItem()->GetInventoryItem();
 
-FInv_SlotAvailabilityResult UInv_InventoryGrid::HasRoomForItem(const UInv_ItemComponent* ItemComponent)
+	AddStacks(Result);
+	ClearHoverItem();
+}
+
+FInv_SlotAvailabilityResult UInv_InventoryGrid::HasRoomForItem(const UInv_ItemComponent* ItemComponent, float StackAmountOverride)
 {
 	if (!IsValid(ItemComponent)) return FInv_SlotAvailabilityResult();
-	return HasRoomForItem(ItemComponent->GetInv_ItemManifest());
+	return HasRoomForItem(ItemComponent->GetInv_ItemManifest(), StackAmountOverride);
 }
 
-FInv_SlotAvailabilityResult UInv_InventoryGrid::HasRoomForItem(const UInv_InventoryItem* Item)
+FInv_SlotAvailabilityResult UInv_InventoryGrid::HasRoomForItem(const UInv_InventoryItem* Item, float StackAmountOverride)
 {
 	if (!IsValid(Item)) return FInv_SlotAvailabilityResult();
-	return HasRoomForItem(Item->GetItemManifest());
+	return HasRoomForItem(Item->GetItemManifest(), StackAmountOverride);
 }
 
 
-
-FInv_SlotAvailabilityResult UInv_InventoryGrid::HasRoomForItem(const FInv_ItemManifest& Manifest)
+FInv_SlotAvailabilityResult UInv_InventoryGrid::HasRoomForItem(const FInv_ItemManifest& Manifest, float StackAmountOverride)
 {
 	FInv_SlotAvailabilityResult Result;
 
@@ -692,6 +702,11 @@ FInv_SlotAvailabilityResult UInv_InventoryGrid::HasRoomForItem(const FInv_ItemMa
 	// Determine how many stacks to add.
 	const int32 MaxStackSize = StackableFragment ? StackableFragment->GetMaxStackSize() : 1;
 	int32 AmountToFill = StackableFragment ? StackableFragment->GetStackCount() : 1;
+
+	if (StackAmountOverride != -1 && Result.bStackable)
+	{
+		AmountToFill = StackAmountOverride;
+	}
 
 	TSet<int32> CheckedIndices;
 	// For each Grid Slot:

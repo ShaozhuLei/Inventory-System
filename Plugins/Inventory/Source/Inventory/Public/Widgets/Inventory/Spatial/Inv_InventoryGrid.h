@@ -31,8 +31,8 @@ public:
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 	
 	FORCEINLINE EInv_ItemCategory GetItemCategory() const {return ItemCategory; };
-	FInv_SlotAvailabilityResult HasRoomForItem(const UInv_ItemComponent* ItemComponent);
-	FInv_SlotAvailabilityResult HasRoomForItem(const UInv_InventoryItem* Item);
+	FInv_SlotAvailabilityResult HasRoomForItem(const UInv_ItemComponent* ItemComponent, float StackCount = -1);
+	FInv_SlotAvailabilityResult HasRoomForItem(const UInv_InventoryItem* Item, float StackCount = -1);
 	void ShowCursor();
 	void HideCursor();
 	void DropItem();
@@ -40,6 +40,8 @@ public:
 	bool HasHoveredItem();
 	void ClearHoverItem();
 	void AssignHoverItem(UInv_InventoryItem* InventoryItem);
+	void OnHide();
+	void PutHoverItemBack();
 	FORCEINLINE	float GetTileSize() const{return TileSize;};
 
 	UFUNCTION()
@@ -51,7 +53,7 @@ public:
 private:
 	void ConstructGrid();
 	
-	FInv_SlotAvailabilityResult HasRoomForItem(const FInv_ItemManifest& Manifest);
+	FInv_SlotAvailabilityResult HasRoomForItem(const FInv_ItemManifest& Manifest, float StackCount = -1);
 
 	void AddItemToIndices(const FInv_SlotAvailabilityResult& Result, UInv_InventoryItem* NewItem);
 	FVector2D GetDrawSize(const FInv_GridFragment* GridFragment) const;
