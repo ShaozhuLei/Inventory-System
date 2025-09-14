@@ -29,8 +29,15 @@ void UInv_InventoryGrid::NativeOnInitialized()
 	InventoryComponent = UInv_InventoryStatics::GetInventoryComponent(GetOwningPlayer());
 	InventoryComponent->OnItemAdded.AddDynamic(this, &UInv_InventoryGrid::AddItem);
 	InventoryComponent->OnStackChange.AddDynamic(this, &UInv_InventoryGrid::AddStacks);
-	//push 到分支
+	InventoryComponent->OnMenuToggled.AddDynamic(this, &UInv_InventoryGrid::OnInventoryMenuToggled);
 	
+}
+void UInv_InventoryGrid::OnInventoryMenuToggled(bool bOpen)
+{
+	if (!bOpen)
+	{
+		PutHoverItemBack();
+	}
 }
 
 void UInv_InventoryGrid::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
@@ -128,6 +135,8 @@ void UInv_InventoryGrid::OnTileParametersUpdated(const FInv_TileParameters& Para
 	ItemDropIndex = UInv_WidgetUtils::GetIndexFromPosition(StartingCoordiate, GridColumns);
 	// ItemDropIndex格子信息结构体
 	CurrentQueryResult = CheckHoverPosition(StartingCoordiate, Dimensions);
+	
+	GEngine->AddOnScreenDebugMessage(1, 3.f, FColor::Cyan, FString::Printf(TEXT("Has Space: %d"), CurrentQueryResult.bHasSpace));
 
 	if (CurrentQueryResult.bHasSpace)
 	{
@@ -446,6 +455,7 @@ void UInv_InventoryGrid::OnGridSlotClicked(int32 GridIndex, const FPointerEvent&
 		return;
 	}
 	//没被占用则可将HoverItem放进去
+	if (!CurrentQueryResult.bHasSpace) return;
 	auto GridSlot = GridSlots[ItemDropIndex];
 	if (!GridSlot->GetInventoryItem().IsValid())
 	{

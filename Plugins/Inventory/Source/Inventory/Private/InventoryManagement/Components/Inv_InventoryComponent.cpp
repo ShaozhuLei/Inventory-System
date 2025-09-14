@@ -57,6 +57,7 @@ void UInv_InventoryComponent::ToggleInventory()
 	{
 		OpenInventoryMenu();
 	}
+	OnMenuToggled.Broadcast(bInventoryMenuOpen);
 }
 
 void UInv_InventoryComponent::AddRepSubObj(UObject* Object)
@@ -213,7 +214,7 @@ void UInv_InventoryComponent::OpenInventoryMenu()
 void UInv_InventoryComponent::CloseInventoryMenu()
 {
 	if (!IsValid(InventoryMenu)) return;
-
+	
 	//折叠性能更好
 	InventoryMenu->SetVisibility(ESlateVisibility::Hidden);
 	bInventoryMenuOpen = false;

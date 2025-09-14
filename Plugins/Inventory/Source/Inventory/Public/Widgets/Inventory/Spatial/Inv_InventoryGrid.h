@@ -104,6 +104,7 @@ private:
 	bool ShouldFillInStack(const int32 RoomInClickedSlot, const int32 HoveredStackCount) const;
 	void FillInStack(const int32 FillAmount, const int32 Remainder, const int32 Index);
 	void CreateItemPopUp(const int32 GridIndex);
+	void OnInventoryMenuToggled(bool bOpen);
 	
 	
 	TWeakObjectPtr<UInv_InventoryComponent> InventoryComponent;
@@ -199,6 +200,8 @@ private:
 	UFUNCTION()
 	void OnPopUpMenuConsume(int32 Index);
 };
+
+
 
 
 
